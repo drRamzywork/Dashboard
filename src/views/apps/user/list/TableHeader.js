@@ -1,4 +1,3 @@
-// ** MUI Imports
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 
@@ -11,6 +10,7 @@ import Icon from 'src/@core/components/icon'
 const TableHeader = props => {
   // ** Props
   const { handleFilter, toggle, value } = props
+
   return (
     <Box
       sx={{
