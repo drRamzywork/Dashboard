@@ -257,7 +257,6 @@ const UserList = ({ apiData }) => {
   const [addUserOpen, setAddUserOpen] = useState(false)
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 })
 
-  // ** Hooks
   const dispatch = useDispatch()
   const store = useSelector(state => state.user)
   useEffect(() => {
@@ -287,6 +286,7 @@ const UserList = ({ apiData }) => {
     setStatus(e.target.value)
   }, [])
   const toggleAddUserDrawer = () => setAddUserOpen(!addUserOpen)
+
   return (
     <Grid container spacing={6.5}>
       <Grid item xs={12}>
@@ -374,7 +374,7 @@ const UserList = ({ apiData }) => {
 export const getStaticProps = async () => {
   const res = await axios.get('https://api4z.suwa.io/api/Poets/GetAllPoets?lang=6&pagenum=1&pagesize=50  ')
   const apiData = res.data
-  console.log(res, 'here')
+
   return {
     props: {
       apiData
