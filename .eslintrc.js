@@ -24,11 +24,6 @@ module.exports = {
     'react/no-unescaped-entities': 'off',
     'import/no-anonymous-default-export': 'off',
 
-    // Allow the rules below:
-    'lines-around-comment': 'off',
-    'newline-before-return': 'off',
-    'import/newline-after-import': 'off',
-
     // add new line above comment
     'lines-around-comment': [
       'error',
