@@ -34,9 +34,11 @@ export const addUser = createAsyncThunk('appUsers/addUser', async (data, { getSt
 
 export const deleteUser = createAsyncThunk('appUsers/deleteUser', async (id, { getState, dispatch }) => {
   // Making a delete request to the mock API
+
   const response = await axios.delete(`/apps/users/delete?id=${id}`)
+
   // Check if the deletion was successful
-  console.log(response)
+
   if (response.status === 200) {
     // Dispatch an action to update the users in the store
     // Assuming 'users' is part of the state and you have an action to set users

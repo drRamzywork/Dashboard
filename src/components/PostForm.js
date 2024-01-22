@@ -9,6 +9,7 @@ const BlogPage = () => {
       const response = await fetch('/api/blogs')
       if (!response.ok) {
         console.error('Failed to fetch blogs')
+
         return
       }
       const data = await response.json()

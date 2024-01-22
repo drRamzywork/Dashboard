@@ -12,6 +12,7 @@ export default async function handler(req, res) {
 
     if (!ObjectId.isValid(fileId)) {
       res.status(400).send('Invalid file ID')
+
       return
     }
 

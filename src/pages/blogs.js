@@ -3,7 +3,8 @@ import dbConnect from '../../server/utils/dbConnect'
 import Blog from '../../server/models/Blog'
 
 const BlogPage = ({ blogs }) => {
-  console.log(blogs, 'blogsblogsblogs')
+  //
+
   return (
     <div>
       <h1>Blogs</h1>
@@ -25,12 +26,14 @@ export async function getServerSideProps() {
   await dbConnect()
 
   const result = await Blog.find({})
+
   const blogs = result.map(doc => {
     const blog = doc.toObject()
     blog._id = blog._id.toString()
-    // Convert Date objects to strings
+
     if (blog.createdAt) blog.createdAt = blog.createdAt.toISOString()
     if (blog.updatedAt) blog.updatedAt = blog.updatedAt.toISOString()
+
     return blog
   })
 

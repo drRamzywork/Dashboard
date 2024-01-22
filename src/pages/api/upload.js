@@ -62,6 +62,7 @@ export const config = {
 
 export default async function uploadHandler(req, res) {
   const { connClient } = await dbConnect()
+
   const bucket = new GridFSBucket(connClient.db('blog'), {
     bucketName: 'uploads'
   })
@@ -72,6 +73,7 @@ export default async function uploadHandler(req, res) {
     if (err) {
       console.error(err)
       res.status(500).json({ error: 'Error parsing the files' })
+
       return
     }
 

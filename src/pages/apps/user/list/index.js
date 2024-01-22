@@ -60,8 +60,12 @@ const userStatusObj = {
 // ** renders client column
 const renderClient = row => {
   if (row.avatar.length) {
+    //
+
     return <CustomAvatar src={row.avatar} sx={{ mr: 2.5, width: 38, height: 38 }} />
   } else {
+    //
+
     return (
       <CustomAvatar
         skin='light'
@@ -246,6 +250,7 @@ const columns = [
     renderCell: ({ row }) => <RowOptions id={row.id} />
   }
 ]
+
 const UserList = ({ apiData }) => {
   // ** State
 
@@ -373,23 +378,14 @@ const UserList = ({ apiData }) => {
   )
 }
 
-// export const getStaticProps = async () => {
-//   const res = await axios.get('https://api4z.suwa.io/api/Poets/GetAllPoets?lang=6&pagenum=1&pagesize=50  ')
-//   const apiData = res.data
-
-//   return {
-//     props: {
-//       apiData
-//     }
-//   }
-// }
-
 export default UserList
 
 import { data } from '../../../../@fake-db/apps/userList'
 import PostForm from 'src/components/PostForm'
+
 export const getStaticProps = async () => {
   // Ensure you are returning the correct part of the imported data
+
   return {
     props: {
       apiData: data.users // assuming 'users' is the key you want to pass as props

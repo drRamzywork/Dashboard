@@ -3,7 +3,6 @@ import { useState } from 'react'
 const BlogForm = () => {
   const [uploadedImageId, setUploadedImageId] = useState(null)
 
-  console.log(uploadedImageId)
   const [formData, setFormData] = useState({
     title: '',
     brefDesc: '',
@@ -44,7 +43,7 @@ const BlogForm = () => {
     }
 
     const data = await response.json()
-    console.log('Data:', data)
+
     return data.fileId // Use the fileId returned by the API
   }
 
@@ -78,7 +77,6 @@ const BlogForm = () => {
     console.log(responseData, 'response')
   }
 
-  console.log(formData, 'formData')
   return (
     <form onSubmit={handleSubmit}>
       <input type='text' name='title' value={formData.title} onChange={handleInputChange} placeholder='Blog Title' />
