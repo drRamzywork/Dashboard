@@ -723,6 +723,7 @@ const data = {
     }
   ]
 }
+export { data }
 
 const projectListData = [
   {
@@ -801,6 +802,8 @@ const projectListData = [
 mock.onPost('/apps/users/add-user').reply(config => {
   // Get event from post data
   const user = JSON.parse(config.data).data
+
+  console.log(user, 'USSSSSSEEEEEEEEEER')
   const lastId = Math.max(...data.users.map(u => u.id), 0)
   user.id = lastId + 1
   data.users.unshift({ ...user, avatar: '', avatarColor: 'primary', status: 'active' })

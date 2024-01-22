@@ -8,6 +8,9 @@ const path = require('path')
 module.exports = {
   trailingSlash: true,
   reactStrictMode: false,
+
+  esmExternals: 'loose',
+  serverComponentsExternalPackages: ['mongoose'],
   webpack: config => {
     config.resolve.alias = {
       ...config.resolve.alias,

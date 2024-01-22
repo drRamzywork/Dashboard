@@ -53,14 +53,14 @@ const userRoleObj = {
 
 const userStatusObj = {
   active: 'success',
-  pending: 'warning'
+  pending: 'warning',
+  inactive: 'secondary'
 }
 
 // ** renders client column
 const renderClient = row => {
-  console.log(row, 'ROWWWWS')
-  if (row.icon) {
-    return <CustomAvatar src={row.icon} sx={{ mr: 2.5, width: 38, height: 38 }} />
+  if (row.avatar.length) {
+    return <CustomAvatar src={row.avatar} sx={{ mr: 2.5, width: 38, height: 38 }} />
   } else {
     return (
       <CustomAvatar
@@ -91,7 +91,6 @@ const RowOptions = ({ id }) => {
   }
 
   const handleDelete = () => {
-    console.log(deleteUser(id), 'dispatch')
     dispatch(deleteUser(id))
     handleRowOptionsClose()
   }
@@ -143,9 +142,9 @@ const columns = [
     flex: 0.25,
     minWidth: 280,
     field: 'fullName',
-    headerName: 'Poets',
+    headerName: 'User',
     renderCell: ({ row }) => {
-      const { fullName, nickname } = row
+      const { fullName, email } = row
 
       return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -164,12 +163,8 @@ const columns = [
             >
               {fullName}
             </Typography>
-            <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
-              {row.name}
-            </Typography>
-
             <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
-              {nickname}
+              {email}
             </Typography>
           </Box>
         </Box>
@@ -180,17 +175,21 @@ const columns = [
     flex: 0.15,
     field: 'role',
     minWidth: 170,
-    headerName: 'Eras',
+    headerName: 'Role',
     renderCell: ({ row }) => {
       return (
-        <CustomChip
-          rounded
-          skin='light'
-          size='small'
-          label={row.zamanName.toString()}
-          color={'primary'}
-          sx={{ textTransform: 'capitalize' }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <CustomAvatar
+            skin='light'
+            sx={{ mr: 4, width: 30, height: 30 }}
+            color={userRoleObj[row.role].color || 'primary'}
+          >
+            <Icon icon={userRoleObj[row.role].icon} />
+          </CustomAvatar>
+          <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
+            {row.role}
+          </Typography>
+        </Box>
       )
     }
   },
@@ -231,8 +230,8 @@ const columns = [
           rounded
           skin='light'
           size='small'
-          label={row.bornInSaudi.toString()}
-          color={row.bornInSaudi === true ? 'success' : 'warning'}
+          label={row.status}
+          color={userStatusObj[row.status]}
           sx={{ textTransform: 'capitalize' }}
         />
       )
@@ -247,9 +246,10 @@ const columns = [
     renderCell: ({ row }) => <RowOptions id={row.id} />
   }
 ]
-
 const UserList = ({ apiData }) => {
   // ** State
+
+  console.log(apiData, 'apiDataapiData')
   const [role, setRole] = useState('')
   const [plan, setPlan] = useState('')
   const [value, setValue] = useState('')
@@ -290,6 +290,8 @@ const UserList = ({ apiData }) => {
   return (
     <Grid container spacing={6.5}>
       <Grid item xs={12}>
+        <PostForm />
+
         <Card>
           <CardHeader title='Search Filters' />
           <CardContent>
@@ -371,15 +373,26 @@ const UserList = ({ apiData }) => {
   )
 }
 
-export const getStaticProps = async () => {
-  const res = await axios.get('https://api4z.suwa.io/api/Poets/GetAllPoets?lang=6&pagenum=1&pagesize=50  ')
-  const apiData = res.data
+// export const getStaticProps = async () => {
+//   const res = await axios.get('https://api4z.suwa.io/api/Poets/GetAllPoets?lang=6&pagenum=1&pagesize=50  ')
+//   const apiData = res.data
 
+//   return {
+//     props: {
+//       apiData
+//     }
+//   }
+// }
+
+export default UserList
+
+import { data } from '../../../../@fake-db/apps/userList'
+import PostForm from 'src/components/PostForm'
+export const getStaticProps = async () => {
+  // Ensure you are returning the correct part of the imported data
   return {
     props: {
-      apiData
+      apiData: data.users // assuming 'users' is the key you want to pass as props
     }
   }
 }
-
-export default UserList
