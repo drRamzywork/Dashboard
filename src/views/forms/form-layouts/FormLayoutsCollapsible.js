@@ -21,7 +21,7 @@ import CardSnippet from 'src/@core/components/card-snippet'
 import * as source from 'src/views/forms/form-elements/file-uploader/FileUploaderSourceCode'
 import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/FileUploaderSingle'
 import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
-import NProgress from 'nprogress'
+import { toast } from 'react-hot-toast'
 
 const FormLayoutsCollapsible = () => {
   // ** States
@@ -43,7 +43,6 @@ const FormLayoutsCollapsible = () => {
     blogImagesGallery: []
   })
 
-  const [loader, setLoader] = useState(false)
   // ==============================================================
 
   const handleFilesSelected = (files, type) => {
@@ -88,8 +87,6 @@ const FormLayoutsCollapsible = () => {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    setLoader(true)
-    NProgress.start()
 
     try {
       // Initialize an object to collect the final data
@@ -118,11 +115,13 @@ const FormLayoutsCollapsible = () => {
       })
 
       const responseData = await response.json()
-      if (responseData.status === 201) {
-        setLoader(false)
+      console.log(response, 'responseData')
+      if (responseData) {
+        toast.success('Blog submitted successfully!') // Success toast
       }
     } catch (error) {
       console.error('Error in form submission:', error)
+      toast.error('Blog submission failed. Please try again.') // Failure toast
     }
   }
 
