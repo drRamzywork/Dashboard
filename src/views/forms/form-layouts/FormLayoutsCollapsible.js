@@ -239,7 +239,7 @@ const FormLayoutsCollapsible = () => {
           <Grid item xs={12} sm={12}>
             <DropzoneWrapper>
               <Grid container spacing={6} className='match-height'>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <CardSnippet
                     title='Upload Blog gallery Images '
                     code={{
@@ -250,7 +250,7 @@ const FormLayoutsCollapsible = () => {
                     <FileUploaderMultiple onFilesSelected={files => handleFilesSelected(files, 'galleryImages')} />
                   </CardSnippet>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <CardSnippet
                     title='Upload Blog Main Image '
                     code={{
