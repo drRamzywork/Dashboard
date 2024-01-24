@@ -22,6 +22,7 @@ import * as source from 'src/views/forms/form-elements/file-uploader/FileUploade
 import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/FileUploaderSingle'
 import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
 import { toast } from 'react-hot-toast'
+import CircularProgress from '@mui/material/CircularProgress'
 
 const FormLayoutsCollapsible = () => {
   // ** States
@@ -29,6 +30,8 @@ const FormLayoutsCollapsible = () => {
     mainImage: null,
     galleryImages: []
   })
+
+  const [loader, setLoader] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -87,7 +90,7 @@ const FormLayoutsCollapsible = () => {
 
   const handleSubmit = async e => {
     e.preventDefault()
-
+    setLoader(true)
     try {
       // Initialize an object to collect the final data
       let finalData = { ...formData }
@@ -118,9 +121,13 @@ const FormLayoutsCollapsible = () => {
       console.log(response, 'responseData')
       if (responseData) {
         toast.success('Blog submitted successfully!') // Success toast
+
+        setLoader(false)
       }
     } catch (error) {
       console.error('Error in form submission:', error)
+      setLoader(false)
+
       toast.error('Blog submission failed. Please try again.') // Failure toast
     }
   }
@@ -260,7 +267,7 @@ const FormLayoutsCollapsible = () => {
 
           <Grid item xs={12} sm={12}>
             <Button variant='contained' endIcon={<Icon icon='tabler:send' />} onClick={handleSubmit}>
-              Save & uplpoad
+              {loader ? <CircularProgress color='inherit' /> : 'Save & uplpoad'}
             </Button>
           </Grid>
         </Grid>

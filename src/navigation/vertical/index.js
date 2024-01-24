@@ -5,11 +5,7 @@ const navigation = () => {
       path: '/home',
       icon: 'tabler:smart-home'
     },
-    {
-      icon: 'tabler:user',
-      title: 'Poets',
-      path: '/apps/user/list'
-    },
+
     {
       icon: 'tabler:square',
       title: 'Add Blog',
