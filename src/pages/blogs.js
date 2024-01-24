@@ -5,7 +5,6 @@ import Blog from '../../server/models/Blog'
 const BlogPage = ({ blogs }) => {
   //
 
-  console.log(blogs, 'blogs')
   return (
     <div>
       <h1>Blogs</h1>

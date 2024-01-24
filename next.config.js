@@ -10,7 +10,6 @@ module.exports = {
   reactStrictMode: false,
 
   esmExternals: 'loose',
-  serverComponentsExternalPackages: ['mongoose'],
   webpack: config => {
     config.resolve.alias = {
       ...config.resolve.alias,

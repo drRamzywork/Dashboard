@@ -3,33 +3,16 @@ import { useState } from 'react'
 
 // ** MUI Imports
 import Grid from '@mui/material/Grid'
-import Radio from '@mui/material/Radio'
 import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
-import { styled } from '@mui/material/styles'
-import Accordion from '@mui/material/Accordion'
-import FormLabel from '@mui/material/FormLabel'
-import Typography from '@mui/material/Typography'
-import RadioGroup from '@mui/material/RadioGroup'
-import Box from '@mui/material/Box'
-import FormControl from '@mui/material/FormControl'
-import AccordionSummary from '@mui/material/AccordionSummary'
-import AccordionDetails from '@mui/material/AccordionDetails'
-import FormControlLabel from '@mui/material/FormControlLabel'
 
 // ** Custom Component Import
 import CustomTextField from 'src/@core/components/mui/text-field'
-
-// ** Third Party Imports
-import Payment from 'payment'
-import Cards from 'react-credit-cards'
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
 
 // ** Util Import
-import { formatCVC, formatExpirationDate, formatCreditCardNumber } from 'src/@core/utils/format'
 
 // ** Styles Import
 import 'react-credit-cards/es/styles-compiled.css'
@@ -38,44 +21,14 @@ import CardSnippet from 'src/@core/components/card-snippet'
 import * as source from 'src/views/forms/form-elements/file-uploader/FileUploaderSourceCode'
 import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/FileUploaderSingle'
 import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
-import FileUploaderRestrictions from 'src/views/forms/form-elements/file-uploader/FileUploaderRestrictions'
+import NProgress from 'nprogress'
 
 const FormLayoutsCollapsible = () => {
   // ** States
-  const [cvc, setCvc] = useState('')
-
-  const [focus, setFocus] = useState('')
-  const [expiry, setExpiry] = useState('')
-  const [cardNumber, setCardNumber] = useState('')
-
-  const [expanded, setExpanded] = useState('panel1')
-
-  const handleChange = panel => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false)
-  }
-  const handleBlur = () => setFocus('')
-
-  // ==============================================================
   const [selectedFiles, setSelectedFiles] = useState({
     mainImage: null,
     galleryImages: []
   })
-
-  // const handleFilesSelected = (files, type) => {
-  //   if (type === 'mainImage' && files[0] !== selectedFiles.mainImage) {
-  //     setSelectedFiles({ ...selectedFiles, mainImage: files[0] })
-  //   } else if (type === 'galleryImages' && files !== selectedFiles.galleryImages) {
-  //     setSelectedFiles({ ...selectedFiles, galleryImages: files })
-  //   }
-  // }
-
-  const handleFilesSelected = (files, type) => {
-    if (type === 'mainImage') {
-      setSelectedFiles({ ...selectedFiles, mainImage: files[0] || null })
-    } else if (type === 'galleryImages') {
-      setSelectedFiles({ ...selectedFiles, galleryImages: files })
-    }
-  }
 
   const [formData, setFormData] = useState({
     title: '',
@@ -89,6 +42,17 @@ const FormLayoutsCollapsible = () => {
     mainImage: [],
     blogImagesGallery: []
   })
+
+  const [loader, setLoader] = useState(false)
+  // ==============================================================
+
+  const handleFilesSelected = (files, type) => {
+    if (type === 'mainImage') {
+      setSelectedFiles({ ...selectedFiles, mainImage: files[0] || null })
+    } else if (type === 'galleryImages') {
+      setSelectedFiles({ ...selectedFiles, galleryImages: files })
+    }
+  }
 
   const handleInputChange = e => {
     const { name, value } = e.target
@@ -115,6 +79,7 @@ const FormLayoutsCollapsible = () => {
 
       console.log(response)
       const data = await response.json()
+
       return data.fileId
     } catch (error) {
       console.error('Error in file upload:', error)
@@ -123,7 +88,8 @@ const FormLayoutsCollapsible = () => {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    console.log('Gallery Images Before Upload:', selectedFiles.galleryImages)
+    setLoader(true)
+    NProgress.start()
 
     try {
       // Initialize an object to collect the final data
@@ -142,8 +108,7 @@ const FormLayoutsCollapsible = () => {
       }
 
       // Now, finalData contains all text fields and image IDs/URLs
-      console.log(finalData, 'finalData')
-      // Send the complete form data to your API
+
       const response = await fetch('/api/create-blog', {
         method: 'POST',
         headers: {
@@ -153,10 +118,11 @@ const FormLayoutsCollapsible = () => {
       })
 
       const responseData = await response.json()
-      console.log(responseData, 'response')
+      if (responseData.status === 201) {
+        setLoader(false)
+      }
     } catch (error) {
       console.error('Error in form submission:', error)
-      // Handle submission error
     }
   }
 

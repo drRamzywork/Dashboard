@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
+
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -270,11 +271,15 @@ const UserList = ({ apiData, blogs }) => {
 
   const handleFilter = useCallback(
     val => {
+      //
+
       setValue(val)
 
-      // If the search value is empty, reset to show all blogs
       if (!val) {
+        // If the search value is empty, reset to show all blogs
+
         setFilteredBlogs(blogs)
+
         return
       }
 
@@ -313,13 +318,13 @@ const UserList = ({ apiData, blogs }) => {
           </CardContent>
 
           <Divider sx={{ m: '0 !important' }} />
+
           <TableHeader value={value} handleFilter={handleFilter} toggle={toggleAddUserDrawer} />
 
           <DataGrid
             autoHeight
             rowHeight={62}
             getRowId={row => row._id}
-            // rows={blogs}
             rows={filteredBlogs}
             columns={columns}
             disableRowSelectionOnClick
