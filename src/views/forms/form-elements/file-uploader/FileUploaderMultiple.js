@@ -1,5 +1,5 @@
 // ** React Imports
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 // ** MUI Imports
 import Box from '@mui/material/Box'
@@ -15,7 +15,7 @@ import Icon from 'src/@core/components/icon'
 // ** Third Party Imports
 import { useDropzone } from 'react-dropzone'
 
-const FileUploaderMultiple = () => {
+const FileUploaderMultiple = ({ onFilesSelected }) => {
   // ** State
   const [files, setFiles] = useState([])
 
@@ -63,6 +63,14 @@ const FileUploaderMultiple = () => {
     setFiles([])
   }
 
+  // ==============================
+
+  useEffect(() => {
+    if (onFilesSelected && files.length > 0) {
+      onFilesSelected(files)
+    }
+  }, [files, onFilesSelected])
+
   return (
     <Fragment>
       <div {...getRootProps({ className: 'dropzone' })}>
@@ -97,7 +105,6 @@ const FileUploaderMultiple = () => {
             <Button color='error' variant='outlined' onClick={handleRemoveAllFiles}>
               Remove All
             </Button>
-            <Button variant='contained'>Upload Files</Button>
           </div>
         </Fragment>
       ) : null}

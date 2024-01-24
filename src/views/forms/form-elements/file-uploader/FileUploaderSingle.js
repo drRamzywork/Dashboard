@@ -1,5 +1,5 @@
 // ** React Imports
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // ** MUI Imports
 import Box from '@mui/material/Box'
@@ -11,7 +11,7 @@ import Icon from 'src/@core/components/icon'
 // ** Third Party Imports
 import { useDropzone } from 'react-dropzone'
 
-const FileUploaderSingle = () => {
+const FileUploaderSingle = ({ onFilesSelected }) => {
   // ** State
   const [files, setFiles] = useState([])
 
@@ -29,6 +29,12 @@ const FileUploaderSingle = () => {
   const img = files.map(file => (
     <img key={file.name} alt={file.name} className='single-file-image' src={URL.createObjectURL(file)} />
   ))
+
+  useEffect(() => {
+    if (onFilesSelected && files.length > 0) {
+      onFilesSelected(files)
+    }
+  }, [files, onFilesSelected])
 
   return (
     <Box {...getRootProps({ className: 'dropzone' })} sx={files.length ? { height: 450 } : {}}>

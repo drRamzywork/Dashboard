@@ -5,12 +5,14 @@ import Blog from '../../server/models/Blog'
 const BlogPage = ({ blogs }) => {
   //
 
+  console.log(blogs, 'blogs')
   return (
     <div>
       <h1>Blogs</h1>
       {blogs.map(blog => (
         <div key={blog._id}>
-          <img width={200} height={200} src={`/api/images/${blog.blogImagesGallery}`} alt='Uploaded' />
+          <img width={200} height={200} src={`/api/images/${blog.mainImage}`} alt='Uploaded' />
+          <img width={200} height={200} src={`/api/images/${blog.blogImageGallery}`} alt='Uploaded' />
 
           <h2>{blog.title}</h2>
 

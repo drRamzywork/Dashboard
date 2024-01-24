@@ -72,18 +72,7 @@ const CardSnippet = props => {
       sx={{ '& .MuiCardHeader-action': { lineHeight: 0.8 }, ...sx }}
       id={id || `card-snippet--${title.toLowerCase().replace(/ /g, '-')}`}
     >
-      <CardHeader
-        title={title}
-        {...(hidden
-          ? {}
-          : {
-              action: (
-                <IconButton onClick={() => setShowCode(!showCode)}>
-                  <Icon icon='tabler:code' fontSize={20} />
-                </IconButton>
-              )
-            })}
-      />
+      <CardHeader title={title} />
       <CardContent>{children}</CardContent>
       {hidden ? null : (
         <Collapse in={showCode}>

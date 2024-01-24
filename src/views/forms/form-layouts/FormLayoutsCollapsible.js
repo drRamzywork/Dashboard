@@ -28,42 +28,26 @@ import Cards from 'react-credit-cards'
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
 
-// ** Styled Component Imports
-import CardWrapper from 'src/@core/styles/libs/react-credit-cards'
-
 // ** Util Import
 import { formatCVC, formatExpirationDate, formatCreditCardNumber } from 'src/@core/utils/format'
 
 // ** Styles Import
 import 'react-credit-cards/es/styles-compiled.css'
-
-// Styled component for the Box wrappers in Delivery Options' accordion
-const BoxWrapper = styled(Box)(({ theme }) => ({
-  borderWidth: 1,
-  display: 'flex',
-  cursor: 'pointer',
-  borderStyle: 'solid',
-  padding: theme.spacing(5),
-  borderColor: theme.palette.divider,
-  '&:first-of-type': {
-    borderTopLeftRadius: theme.shape.borderRadius,
-    borderTopRightRadius: theme.shape.borderRadius
-  },
-  '&:last-of-type': {
-    borderBottomLeftRadius: theme.shape.borderRadius,
-    borderBottomRightRadius: theme.shape.borderRadius
-  }
-}))
+import DropzoneWrapper from 'src/@core/styles/libs/react-dropzone'
+import CardSnippet from 'src/@core/components/card-snippet'
+import * as source from 'src/views/forms/form-elements/file-uploader/FileUploaderSourceCode'
+import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/FileUploaderSingle'
+import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
+import FileUploaderRestrictions from 'src/views/forms/form-elements/file-uploader/FileUploaderRestrictions'
 
 const FormLayoutsCollapsible = () => {
   // ** States
   const [cvc, setCvc] = useState('')
-  const [name, setName] = useState('')
+
   const [focus, setFocus] = useState('')
   const [expiry, setExpiry] = useState('')
   const [cardNumber, setCardNumber] = useState('')
-  const [option, setOption] = useState('standard')
-  const [paymentMethod, setPaymentMethod] = useState('card')
+
   const [expanded, setExpanded] = useState('panel1')
 
   const handleChange = panel => (event, isExpanded) => {
@@ -71,259 +55,251 @@ const FormLayoutsCollapsible = () => {
   }
   const handleBlur = () => setFocus('')
 
-  const handleInputChange = ({ target }) => {
-    if (target.name === 'number') {
-      target.value = formatCreditCardNumber(target.value, Payment)
-      setCardNumber(target.value)
-    } else if (target.name === 'expiry') {
-      target.value = formatExpirationDate(target.value)
-      setExpiry(target.value)
-    } else if (target.name === 'cvc') {
-      target.value = formatCVC(target.value, cardNumber, Payment)
-      setCvc(target.value)
+  // ==============================================================
+  const [selectedFiles, setSelectedFiles] = useState({
+    mainImage: null,
+    galleryImages: []
+  })
+
+  // const handleFilesSelected = (files, type) => {
+  //   if (type === 'mainImage' && files[0] !== selectedFiles.mainImage) {
+  //     setSelectedFiles({ ...selectedFiles, mainImage: files[0] })
+  //   } else if (type === 'galleryImages' && files !== selectedFiles.galleryImages) {
+  //     setSelectedFiles({ ...selectedFiles, galleryImages: files })
+  //   }
+  // }
+
+  const handleFilesSelected = (files, type) => {
+    if (type === 'mainImage') {
+      setSelectedFiles({ ...selectedFiles, mainImage: files[0] || null })
+    } else if (type === 'galleryImages') {
+      setSelectedFiles({ ...selectedFiles, galleryImages: files })
+    }
+  }
+
+  const [formData, setFormData] = useState({
+    title: '',
+    brefDesc: '',
+    fullDesc: '',
+    qoute: '',
+    contentWriter: '',
+    secTitle: '',
+    secDesc: '',
+    category: '',
+    mainImage: [],
+    blogImagesGallery: []
+  })
+
+  const handleInputChange = e => {
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+  }
+
+  const handleFileUpload = async file => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    console.log(file, 'FILELEEE')
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Upload Error Response:', errorText)
+        throw new Error(`File upload failed: ${response.statusText}`)
+      }
+
+      console.log(response)
+      const data = await response.json()
+      return data.fileId
+    } catch (error) {
+      console.error('Error in file upload:', error)
+    }
+  }
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    console.log('Gallery Images Before Upload:', selectedFiles.galleryImages)
+
+    try {
+      // Initialize an object to collect the final data
+      let finalData = { ...formData }
+
+      // Handle main image upload
+      if (selectedFiles.mainImage) {
+        const mainImageId = await handleFileUpload(selectedFiles.mainImage)
+        finalData.mainImage = mainImageId
+      }
+
+      // Handle gallery images upload
+      if (selectedFiles.galleryImages.length > 0) {
+        const galleryImageIds = await Promise.all(selectedFiles.galleryImages.map(file => handleFileUpload(file)))
+        finalData.blogImagesGallery = galleryImageIds
+      }
+
+      // Now, finalData contains all text fields and image IDs/URLs
+      console.log(finalData, 'finalData')
+      // Send the complete form data to your API
+      const response = await fetch('/api/create-blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalData)
+      })
+
+      const responseData = await response.json()
+      console.log(responseData, 'response')
+    } catch (error) {
+      console.error('Error in form submission:', error)
+      // Handle submission error
     }
   }
 
   return (
     <form onSubmit={e => e.preventDefault()}>
-      <Accordion expanded={expanded === 'panel1'} onChange={handleChange('panel1')}>
-        <AccordionSummary
-          expandIcon={<Icon icon='tabler:chevron-down' />}
-          id='form-layouts-collapsible-header-1'
-          aria-controls='form-layouts-collapsible-content-1'
-        >
-          <Typography variant='subtitle1' sx={{ fontWeight: 500 }}>
-            Delivery Address
-          </Typography>
-        </AccordionSummary>
-        <Divider sx={{ m: '0 !important' }} />
-        <AccordionDetails>
-          <Grid container spacing={5}>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField fullWidth label='Full Name' placeholder='Leonard Carter' />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField fullWidth type='number' label='Phone No.' placeholder='123-456-7890' />
-            </Grid>
-            <Grid item xs={12}>
-              <CustomTextField multiline rows={3} fullWidth label='Address' placeholder='1456, Liberty Street' />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField fullWidth type='number' label='ZIP Code' placeholder='10005' />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField fullWidth label='Landmark' placeholder='Nr. Wall Street' />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField fullWidth label='City' placeholder='New York' />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <CustomTextField select fullWidth label='Country' id='form-layouts-collapsible-select' defaultValue=''>
-                <MenuItem value='UK'>UK</MenuItem>
-                <MenuItem value='USA'>USA</MenuItem>
-                <MenuItem value='Australia'>Australia</MenuItem>
-                <MenuItem value='Germany'>Germany</MenuItem>
-              </CustomTextField>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl>
-                <FormLabel>Address Type</FormLabel>
-                <RadioGroup
-                  row
-                  defaultValue='home'
-                  aria-label='address type'
-                  name='form-layouts-collapsible-address-radio'
-                >
-                  <FormControlLabel value='home' control={<Radio />} label='Home (All day delivery)' />
-                  <FormControlLabel value='office' control={<Radio />} label='Office (Delivery between 10 AM - 5 PM)' />
-                </RadioGroup>
-              </FormControl>
-            </Grid>
+      <Grid sx={{ pt: theme => `${theme.spacing(4)} !important` }}>
+        <Grid container spacing={5}>
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='title'
+              value={formData.title}
+              onChange={handleInputChange}
+              fullWidth
+              label='Blog title'
+              placeholder='Blog title'
+            />
           </Grid>
-        </AccordionDetails>
-      </Accordion>
 
-      <Accordion expanded={expanded === 'panel2'} onChange={handleChange('panel2')}>
-        <AccordionSummary
-          expandIcon={<Icon icon='tabler:chevron-down' />}
-          id='form-layouts-collapsible-header-2'
-          aria-controls='form-layouts-collapsible-content-2'
-        >
-          <Typography variant='subtitle1' sx={{ fontWeight: 500 }}>
-            Delivery Options
-          </Typography>
-        </AccordionSummary>
-        <Divider sx={{ m: '0 !important' }} />
-        <AccordionDetails sx={{ pt: 6, pb: 6 }}>
-          <BoxWrapper
-            onClick={() => setOption('standard')}
-            sx={option === 'standard' ? { borderColor: 'primary.main' } : {}}
-          >
-            <Radio
-              value='standard'
-              checked={option === 'standard'}
-              name='form-layouts-collapsible-options-radio'
-              inputProps={{ 'aria-label': 'Standard Delivery' }}
-              sx={{ mr: 2, ml: -2.5, mt: -2.5, alignItems: 'flex-start' }}
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='brefDesc'
+              value={formData.brefDesc}
+              onChange={handleInputChange}
+              multiline
+              rows={3}
+              fullWidth
+              label='Blog short descreption'
+              placeholder='short descreption'
             />
-            <Box sx={{ width: '100%' }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Typography sx={{ fontWeight: 500 }}>Standard 3-5 Days</Typography>
-                <Typography sx={{ fontWeight: 500 }}>Free</Typography>
-              </Box>
-              <Typography variant='body2'>Friday, 15 Nov - Monday, 18 Nov</Typography>
-            </Box>
-          </BoxWrapper>
-          <BoxWrapper
-            onClick={() => setOption('express')}
-            sx={option === 'express' ? { borderColor: 'primary.main' } : {}}
-          >
-            <Radio
-              value='express'
-              checked={option === 'express'}
-              name='form-layouts-collapsible-options-radio'
-              inputProps={{ 'aria-label': 'Express Delivery' }}
-              sx={{ mr: 2, ml: -2.5, mt: -2.5, alignItems: 'flex-start' }}
-            />
-            <Box sx={{ width: '100%' }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Typography sx={{ fontWeight: 500 }}>Express</Typography>
-                <Typography sx={{ fontWeight: 500 }}>$5.00</Typography>
-              </Box>
-              <Typography variant='body2'>Friday, 15 Nov - Sunday, 17 Nov</Typography>
-            </Box>
-          </BoxWrapper>
-          <BoxWrapper
-            onClick={() => setOption('overnight')}
-            sx={option === 'overnight' ? { borderColor: 'primary.main' } : {}}
-          >
-            <Radio
-              value='overnight'
-              checked={option === 'overnight'}
-              name='form-layouts-collapsible-options-radio'
-              inputProps={{ 'aria-label': 'Overnight Delivery' }}
-              sx={{ mr: 2, ml: -2.5, mt: -2.5, alignItems: 'flex-start' }}
-            />
-            <Box sx={{ width: '100%' }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Typography sx={{ fontWeight: 500 }}>Overnight</Typography>
-                <Typography sx={{ fontWeight: 500 }}>$10.00</Typography>
-              </Box>
-              <Typography variant='body2'>Friday, 15 Nov - Saturday, 16 Nov</Typography>
-            </Box>
-          </BoxWrapper>
-        </AccordionDetails>
-      </Accordion>
+          </Grid>
 
-      <Accordion expanded={expanded === 'panel3'} onChange={handleChange('panel3')}>
-        <AccordionSummary
-          expandIcon={<Icon icon='tabler:chevron-down' />}
-          id='form-layouts-collapsible-header-3'
-          aria-controls='form-layouts-collapsible-content-3'
-        >
-          <Typography variant='subtitle1' sx={{ fontWeight: 500 }}>
-            Payment Method
-          </Typography>
-        </AccordionSummary>
-        <Divider sx={{ m: '0 !important' }} />
-        <AccordionDetails>
-          <Grid container spacing={5}>
-            <Grid item xs={12}>
-              <Grid container spacing={6}>
-                <Grid item xs={12}>
-                  <RadioGroup
-                    row
-                    value={paymentMethod}
-                    aria-label='payment type'
-                    name='form-layouts-collapsible-payment-radio'
-                    onChange={e => setPaymentMethod(e.target.value)}
+          <Grid item xs={12}>
+            <CustomTextField
+              value={formData.fullDesc}
+              name='fullDesc'
+              onChange={handleInputChange}
+              multiline
+              rows={3}
+              fullWidth
+              label='Blog descreption'
+              placeholder='Long descreption'
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='qoute'
+              value={formData.qoute}
+              onChange={handleInputChange}
+              fullWidth
+              label='Quote'
+              placeholder='quote'
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='contentWriter'
+              value={formData.contentWriter}
+              onChange={handleInputChange}
+              fullWidth
+              label='Content Writer name'
+              placeholder='Content Writer name'
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='secTitle'
+              value={formData.secTitle}
+              onChange={handleInputChange}
+              fullWidth
+              label='Second title'
+              placeholder='Second  title'
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <CustomTextField
+              name='secDesc'
+              value={formData.secDesc}
+              onChange={handleInputChange}
+              multiline
+              rows={3}
+              fullWidth
+              label='Second Desc '
+              placeholder='Second Desc '
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='category'
+              value={formData.category}
+              onChange={handleInputChange}
+              select
+              fullWidth
+              label='Category'
+              id='form-layouts-collapsible-select'
+              defaultValue=''
+            >
+              <MenuItem value='TEAMWORK'>TEAMWORK</MenuItem>
+              <MenuItem value='IDEAS'>IDEAS</MenuItem>
+              <MenuItem value='WORKSPACE'>WORKSPACE</MenuItem>
+              <MenuItem value='BUSINESS TIPS'>BUSINESS TIPS</MenuItem>
+            </CustomTextField>
+          </Grid>
+
+          <Grid item xs={12} sm={12}>
+            <DropzoneWrapper>
+              <Grid container spacing={6} className='match-height'>
+                <Grid item xs={6}>
+                  <CardSnippet
+                    title='Upload Blog gallery Images '
+                    code={{
+                      tsx: null,
+                      jsx: source.FileUploaderMultipleJSXCode
+                    }}
                   >
-                    <FormControlLabel value='card' control={<Radio />} label='Credit/Debit/ATM Card' />
-                    <FormControlLabel value='cash' control={<Radio />} label='Cash on Delivery' />
-                  </RadioGroup>
+                    <FileUploaderMultiple onFilesSelected={files => handleFilesSelected(files, 'galleryImages')} />
+                  </CardSnippet>
                 </Grid>
-                {paymentMethod === 'card' ? (
-                  <Grid item xs={12}>
-                    <Grid container spacing={6}>
-                      <Grid item xs={12}>
-                        <CardWrapper>
-                          <Cards cvc={cvc} focused={focus} expiry={expiry} name={name} number={cardNumber} />
-                        </CardWrapper>
-                      </Grid>
-                      <Grid item xs={12} md={8} xl={6} sx={{ mt: 2 }}>
-                        <Grid container spacing={6}>
-                          <Grid item xs={12}>
-                            <CustomTextField
-                              fullWidth
-                              name='number'
-                              value={cardNumber}
-                              autoComplete='off'
-                              label='Card Number'
-                              onBlur={handleBlur}
-                              onChange={handleInputChange}
-                              placeholder='0000 0000 0000 0000'
-                              onFocus={e => setFocus(e.target.name)}
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <CustomTextField
-                              fullWidth
-                              name='name'
-                              value={name}
-                              label='Name'
-                              autoComplete='off'
-                              onBlur={handleBlur}
-                              placeholder='John Doe'
-                              onFocus={e => setFocus(e.target.name)}
-                              onChange={e => setName(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <CustomTextField
-                              fullWidth
-                              name='expiry'
-                              value={expiry}
-                              autoComplete='off'
-                              label='Expiry Date'
-                              placeholder='MM/YY'
-                              onBlur={handleBlur}
-                              onChange={handleInputChange}
-                              inputProps={{ maxLength: '5' }}
-                              onFocus={e => setFocus(e.target.name)}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <CustomTextField
-                              fullWidth
-                              name='cvc'
-                              value={cvc}
-                              label='CVC Code'
-                              autoComplete='off'
-                              onBlur={handleBlur}
-                              onChange={handleInputChange}
-                              onFocus={e => setFocus(e.target.name)}
-                              placeholder={Payment.fns.cardType(cardNumber) === 'amex' ? '1234' : '123'}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                ) : null}
+                <Grid item xs={6}>
+                  <CardSnippet
+                    title='Upload Blog Main Image '
+                    code={{
+                      tsx: null,
+                      jsx: source.FileUploaderSingleJSXCode
+                    }}
+                  >
+                    <FileUploaderSingle onFilesSelected={files => handleFilesSelected(files, 'mainImage')} />
+                  </CardSnippet>
+                </Grid>
               </Grid>
-            </Grid>
+            </DropzoneWrapper>
           </Grid>
-        </AccordionDetails>
-        <Divider sx={{ m: '0 !important' }} />
-        <AccordionDetails>
-          <Button type='submit' variant='contained' sx={{ mr: 4 }}>
-            Place Order
-          </Button>
-          <Button type='reset' variant='tonal' color='secondary'>
-            Reset
-          </Button>
-        </AccordionDetails>
-      </Accordion>
+
+          <Grid item xs={12} sm={12}>
+            <Button variant='contained' endIcon={<Icon icon='tabler:send' />} onClick={handleSubmit}>
+              Save & uplpoad
+            </Button>
+          </Grid>
+        </Grid>
+      </Grid>
     </form>
   )
 }

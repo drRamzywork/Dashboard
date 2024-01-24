@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
-
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -35,9 +34,6 @@ import { getInitials } from 'src/@core/utils/get-initials'
 // ** Actions Imports
 import { fetchData, deleteUser } from 'src/store/apps/user'
 
-// ** Third Party Components
-import axios from 'axios'
-
 // ** Custom Table Components Imports
 import TableHeader from 'src/views/apps/user/list/TableHeader'
 import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
@@ -59,10 +55,10 @@ const userStatusObj = {
 
 // ** renders client column
 const renderClient = row => {
-  if (row.avatar.length) {
+  if (row.mainImage.length) {
     //
 
-    return <CustomAvatar src={row.avatar} sx={{ mr: 2.5, width: 38, height: 38 }} />
+    return <CustomAvatar src={`/api/images/${row.mainImage}`} sx={{ mr: 2.5, width: 38, height: 38 }} />
   } else {
     //
 
@@ -145,10 +141,10 @@ const columns = [
   {
     flex: 0.25,
     minWidth: 280,
-    field: 'fullName',
-    headerName: 'User',
+    field: 'title',
+    headerName: 'Blog',
     renderCell: ({ row }) => {
-      const { fullName, email } = row
+      const { title, secTitle } = row
 
       return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -165,10 +161,10 @@ const columns = [
                 '&:hover': { color: 'primary.main' }
               }}
             >
-              {fullName}
+              {title}
             </Typography>
             <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
-              {email}
+              {secTitle}
             </Typography>
           </Box>
         </Box>
@@ -179,19 +175,12 @@ const columns = [
     flex: 0.15,
     field: 'role',
     minWidth: 170,
-    headerName: 'Role',
+    headerName: 'Full Desc',
     renderCell: ({ row }) => {
       return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <CustomAvatar
-            skin='light'
-            sx={{ mr: 4, width: 30, height: 30 }}
-            color={userRoleObj[row.role].color || 'primary'}
-          >
-            <Icon icon={userRoleObj[row.role].icon} />
-          </CustomAvatar>
           <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
-            {row.role}
+            {row.fullDesc}
           </Typography>
         </Box>
       )
@@ -200,47 +189,17 @@ const columns = [
   {
     flex: 0.15,
     minWidth: 120,
-    headerName: 'Plan',
-    field: 'currentPlan',
+    headerName: 'Second Desc',
+    field: 'secDesc',
     renderCell: ({ row }) => {
       return (
         <Typography noWrap sx={{ fontWeight: 500, color: 'text.secondary', textTransform: 'capitalize' }}>
-          {row.currentPlan}
+          {row.secDesc}
         </Typography>
       )
     }
   },
-  {
-    flex: 0.15,
-    minWidth: 190,
-    field: 'billing',
-    headerName: 'Billing',
-    renderCell: ({ row }) => {
-      return (
-        <Typography noWrap sx={{ color: 'text.secondary' }}>
-          {row.billing}
-        </Typography>
-      )
-    }
-  },
-  {
-    flex: 0.1,
-    minWidth: 110,
-    field: 'status',
-    headerName: 'Status',
-    renderCell: ({ row }) => {
-      return (
-        <CustomChip
-          rounded
-          skin='light'
-          size='small'
-          label={row.status}
-          color={userStatusObj[row.status]}
-          sx={{ textTransform: 'capitalize' }}
-        />
-      )
-    }
-  },
+
   {
     flex: 0.1,
     minWidth: 100,
@@ -251,10 +210,10 @@ const columns = [
   }
 ]
 
-const UserList = ({ apiData }) => {
+const UserList = ({ apiData, blogs }) => {
   // ** State
+  const [selectedCategory, setSelectedCategory] = useState('')
 
-  console.log(apiData, 'apiDataapiData')
   const [role, setRole] = useState('')
   const [plan, setPlan] = useState('')
   const [value, setValue] = useState('')
@@ -275,10 +234,6 @@ const UserList = ({ apiData }) => {
     )
   }, [dispatch, plan, role, status, value])
 
-  const handleFilter = useCallback(val => {
-    setValue(val)
-  }, [])
-
   const handleRoleChange = useCallback(e => {
     setRole(e.target.value)
   }, [])
@@ -292,67 +247,66 @@ const UserList = ({ apiData }) => {
   }, [])
   const toggleAddUserDrawer = () => setAddUserOpen(!addUserOpen)
 
+  const [filteredBlogs, setFilteredBlogs] = useState(blogs)
+  useEffect(() => {
+    setFilteredBlogs(blogs)
+  }, [blogs])
+
+  useEffect(() => {
+    let filtered = blogs
+    if (value) {
+      const lowercasedValue = value.toLowerCase()
+      filtered = filtered.filter(blog => blog.title.toLowerCase().includes(lowercasedValue))
+    }
+    if (selectedCategory && selectedCategory !== 'Select Category') {
+      filtered = filtered.filter(blog => blog.category === selectedCategory)
+    }
+    setFilteredBlogs(filtered)
+  }, [blogs, value, selectedCategory])
+
+  const handleCategoryChange = e => {
+    setSelectedCategory(e.target.value)
+  }
+
+  const handleFilter = useCallback(
+    val => {
+      setValue(val)
+
+      // If the search value is empty, reset to show all blogs
+      if (!val) {
+        setFilteredBlogs(blogs)
+        return
+      }
+
+      // Convert the input value to lowercase for case-insensitive comparison
+      const lowercasedValue = val.toLowerCase()
+
+      // Filter blogs based on the input value
+      const filtered = blogs.filter(blog => blog.title.toLowerCase().includes(lowercasedValue))
+
+      // Update the filteredBlogs state with the filtered results
+      setFilteredBlogs(filtered)
+    },
+    [blogs]
+  )
+  const uniqueCategories = Array.from(new Set(blogs.map(blog => blog.category)))
+
   return (
     <Grid container spacing={6.5}>
       <Grid item xs={12}>
-        <PostForm />
-
         <Card>
           <CardHeader title='Search Filters' />
           <CardContent>
             <Grid container spacing={6}>
               <Grid item sm={4} xs={12}>
-                <CustomTextField
-                  select
-                  fullWidth
-                  defaultValue='Select Role'
-                  SelectProps={{
-                    value: role,
-                    displayEmpty: true,
-                    onChange: e => handleRoleChange(e)
-                  }}
-                >
-                  <MenuItem value=''>Select Role</MenuItem>
-                  <MenuItem value='admin'>Admin</MenuItem>
-                  <MenuItem value='author'>Author</MenuItem>
-                  <MenuItem value='editor'>Editor</MenuItem>
-                  <MenuItem value='maintainer'>Maintainer</MenuItem>
-                  <MenuItem value='subscriber'>Subscriber</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item sm={4} xs={12}>
-                <CustomTextField
-                  select
-                  fullWidth
-                  defaultValue='Select Plan'
-                  SelectProps={{
-                    value: plan,
-                    displayEmpty: true,
-                    onChange: e => handlePlanChange(e)
-                  }}
-                >
-                  <MenuItem value=''>Select Plan</MenuItem>
-                  <MenuItem value='basic'>Basic</MenuItem>
-                  <MenuItem value='company'>Company</MenuItem>
-                  <MenuItem value='enterprise'>Enterprise</MenuItem>
-                  <MenuItem value='team'>Team</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item sm={4} xs={12}>
-                <CustomTextField
-                  select
-                  fullWidth
-                  defaultValue='Select Status'
-                  SelectProps={{
-                    value: status,
-                    displayEmpty: true,
-                    onChange: e => handleStatusChange(e)
-                  }}
-                >
-                  <MenuItem value=''>Select Status</MenuItem>
-                  <MenuItem value='pending'>Pending</MenuItem>
-                  <MenuItem value='active'>Active</MenuItem>
-                  <MenuItem value='inactive'>Inactive</MenuItem>
+                <CustomTextField select fullWidth value={selectedCategory} onChange={handleCategoryChange}>
+                  <MenuItem value='Select Category'>Select Category</MenuItem>
+
+                  {uniqueCategories.map(category => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
                 </CustomTextField>
               </Grid>
             </Grid>
@@ -360,10 +314,13 @@ const UserList = ({ apiData }) => {
 
           <Divider sx={{ m: '0 !important' }} />
           <TableHeader value={value} handleFilter={handleFilter} toggle={toggleAddUserDrawer} />
+
           <DataGrid
             autoHeight
             rowHeight={62}
-            rows={apiData}
+            getRowId={row => row._id}
+            // rows={blogs}
+            rows={filteredBlogs}
             columns={columns}
             disableRowSelectionOnClick
             pageSizeOptions={[10, 25, 50]}
@@ -380,15 +337,23 @@ const UserList = ({ apiData }) => {
 
 export default UserList
 
-import { data } from '../../../../@fake-db/apps/userList'
-import PostForm from 'src/components/PostForm'
+import dbConnect from '@server/utils/dbConnect'
+import Blog from '@server/models/Blog'
 
-export const getStaticProps = async () => {
-  // Ensure you are returning the correct part of the imported data
+export async function getServerSideProps() {
+  await dbConnect()
 
-  return {
-    props: {
-      apiData: data.users // assuming 'users' is the key you want to pass as props
-    }
-  }
+  const result = await Blog.find({})
+
+  const blogs = result.map(doc => {
+    const blog = doc.toObject()
+    blog._id = blog._id.toString()
+
+    if (blog.createdAt) blog.createdAt = blog.createdAt.toISOString()
+    if (blog.updatedAt) blog.updatedAt = blog.updatedAt.toISOString()
+
+    return blog
+  })
+
+  return { props: { blogs } }
 }

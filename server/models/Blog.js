@@ -3,10 +3,14 @@ import mongoose from 'mongoose'
 const BlogSchema = new mongoose.Schema({
   title: String,
   brefDesc: String,
-  mainImage: String, // URL to the main image
-  blogImagesGallery: [String], // Array of URLs to the images in the gallery
-  hashContent: String // The hash content of the blog
-  // ... other fields ...
+  fullDesc: String,
+  quote: String,
+  contentWriter: String,
+  secTitle: String,
+  secDesc: String,
+  category: String,
+  mainImage: [String],
+  blogImagesGallery: [String]
 })
 
 export default mongoose.models.Blog || mongoose.model('Blog', BlogSchema)

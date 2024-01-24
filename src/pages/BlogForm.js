@@ -86,7 +86,6 @@ const BlogForm = () => {
       {uploadedImageId && <img width={200} height={200} src={`/api/images/${uploadedImageId}`} alt='Uploaded' />}
       <hr />
 
-      {console.log(uploadedImageId, 'uploadedImageIduploadedImageIduploadedImageId')}
       <button type='submit'>Create Blog</button>
     </form>
   )
