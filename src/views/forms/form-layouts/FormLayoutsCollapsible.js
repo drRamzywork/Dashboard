@@ -23,11 +23,12 @@ import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/File
 import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
 import { toast } from 'react-hot-toast'
 import CircularProgress from '@mui/material/CircularProgress'
+import imageCompression from 'browser-image-compression'
 
 const FormLayoutsCollapsible = () => {
   // ** States
   const [selectedFiles, setSelectedFiles] = useState({
-    mainImage: null,
+    mainImage: [],
     galleryImages: []
   })
 
@@ -42,6 +43,7 @@ const FormLayoutsCollapsible = () => {
     secTitle: '',
     secDesc: '',
     category: '',
+    youtubeURL: '',
     mainImage: [],
     blogImagesGallery: []
   })
@@ -52,7 +54,7 @@ const FormLayoutsCollapsible = () => {
     if (type === 'mainImage') {
       setSelectedFiles({ ...selectedFiles, mainImage: files[0] || null })
     } else if (type === 'galleryImages') {
-      setSelectedFiles({ ...selectedFiles, galleryImages: files })
+      setSelectedFiles({ galleryImages: files })
     }
   }
 
@@ -116,6 +118,8 @@ const FormLayoutsCollapsible = () => {
         },
         body: JSON.stringify(finalData)
       })
+
+      console.log(finalData, 'finalData')
 
       const responseData = await response.json()
       console.log(response, 'responseData')
@@ -202,6 +206,17 @@ const FormLayoutsCollapsible = () => {
               fullWidth
               label='Second title'
               placeholder='Second  title'
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <CustomTextField
+              name='youtubeURL'
+              value={formData.youtubeURL}
+              onChange={handleInputChange}
+              fullWidth
+              label='Youtube Url'
+              placeholder='Youtube Url'
             />
           </Grid>
 

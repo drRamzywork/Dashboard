@@ -1,68 +1,58 @@
-// ** React Imports
 import { useEffect, useState } from 'react'
-
-// ** MUI Imports
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-
-// ** Icon Imports
 import Icon from 'src/@core/components/icon'
-
-// ** Third Party Imports
 import { useDropzone } from 'react-dropzone'
 
 const FileUploaderSingle = ({ onFilesSelected }) => {
-  // ** State
-  const [files, setFiles] = useState([])
+  const [previewUrl, setPreviewUrl] = useState(null)
 
-  // ** Hooks
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif']
     },
     onDrop: acceptedFiles => {
-      setFiles(acceptedFiles.map(file => Object.assign(file)))
+      // Create a blob URL only when a new file is dropped
+
+      if (acceptedFiles.length > 0) {
+        const newFile = acceptedFiles[0]
+        const newPreviewUrl = URL.createObjectURL(newFile)
+
+        // Clean up the previous blob URL
+
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl)
+        }
+        setPreviewUrl(newPreviewUrl)
+
+        // Notify parent component with the new file
+        if (onFilesSelected) {
+          onFilesSelected([newFile])
+        }
+      }
     }
   })
 
-  const img = files.map(file => (
-    <img key={file.name} alt={file.name} className='single-file-image' src={URL.createObjectURL(file)} />
-  ))
-
   useEffect(() => {
-    if (onFilesSelected && files.length > 0) {
-      onFilesSelected(files)
+    // Clean up the blob URL when the component unmounts
+
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
     }
-  }, [files, onFilesSelected])
+  }, [previewUrl])
 
   return (
-    <Box {...getRootProps({ className: 'dropzone' })} sx={files.length ? { height: 450 } : {}}>
+    <Box {...getRootProps({ className: 'dropzone' })}>
       <input {...getInputProps()} />
-      {files.length ? (
-        img
+      {previewUrl ? (
+        <img key={previewUrl} alt='Preview' src={previewUrl} className='single-file-image' />
       ) : (
         <Box sx={{ display: 'flex', textAlign: 'center', alignItems: 'center', flexDirection: 'column' }}>
-          <Box
-            sx={{
-              mb: 8.75,
-              width: 48,
-              height: 48,
-              display: 'flex',
-              borderRadius: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: theme => `rgba(${theme.palette.customColors.main}, 0.08)`
-            }}
-          >
-            <Icon icon='tabler:upload' fontSize='1.75rem' />
-          </Box>
-          <Typography variant='h4' sx={{ mb: 2.5 }}>
-            Drop files here or click to upload.
-          </Typography>
-          <Typography sx={{ color: 'text.secondary' }}>
-            (This is just a demo drop zone. Selected files are not actually uploaded.)
-          </Typography>
+          <Icon icon='tabler:upload' fontSize='1.75rem' />
+          <Typography variant='h4'>Drop files here or click to upload.</Typography>
         </Box>
       )}
     </Box>

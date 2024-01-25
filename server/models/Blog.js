@@ -9,6 +9,7 @@ const BlogSchema = new mongoose.Schema({
   secTitle: String,
   secDesc: String,
   category: String,
+  youtubeURL: String,
   mainImage: [String],
   blogImagesGallery: [String]
 })

@@ -41,6 +41,7 @@
     "axios-mock-adapter": "1.21.4",
     "babel-eslint": "10.1.0",
     "bootstrap-icons": "1.10.5",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "4.3.0",
     "cleave.js": "1.6.0",
     "clipboard-copy": "4.0.1",

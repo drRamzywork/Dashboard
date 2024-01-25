@@ -57,8 +57,6 @@ const userStatusObj = {
 // ** renders client column
 const renderClient = row => {
   if (row.mainImage.length) {
-    //
-
     return <CustomAvatar src={`/api/images/${row.mainImage}`} sx={{ mr: 2.5, width: 38, height: 38 }} />
   } else {
     //
