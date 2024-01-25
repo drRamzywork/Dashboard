@@ -362,8 +362,7 @@ export async function getStaticProps() {
 
   const response = await axios.request(config)
   const blogs = response.data.documents // Assuming the response has a 'documents' field
-  // Return the blogs data as a prop
-  console.log(blogs, 'blogs')
+
   return {
     props: {
       blogs
