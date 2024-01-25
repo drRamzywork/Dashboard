@@ -38,6 +38,7 @@ import { fetchData, deleteUser } from 'src/store/apps/user'
 // ** Custom Table Components Imports
 import TableHeader from 'src/views/apps/user/list/TableHeader'
 import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
+import axios from 'axios'
 
 // ** renders client column
 const userRoleObj = {
@@ -340,23 +341,33 @@ const UserList = ({ apiData, blogs }) => {
 
 export default UserList
 
-import dbConnect from '@server/utils/dbConnect'
-import Blog from '@server/models/Blog'
-
-export async function getServerSideProps() {
-  await dbConnect()
-
-  const result = await Blog.find({})
-
-  const blogs = result.map(doc => {
-    const blog = doc.toObject()
-    blog._id = blog._id.toString()
-
-    if (blog.createdAt) blog.createdAt = blog.createdAt.toISOString()
-    if (blog.updatedAt) blog.updatedAt = blog.updatedAt.toISOString()
-
-    return blog
+export async function getStaticProps() {
+  const data = JSON.stringify({
+    collection: 'blogs',
+    database: 'dashboard-db',
+    dataSource: 'Cluster0'
   })
 
-  return { props: { blogs } }
+  const config = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: 'https://data.mongodb-api.com/app/data-yhygn/endpoint/data/v1/action/find',
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Request-Headers': '*',
+      'api-key': 'Mmg9Q0QiZkSIpthlGX1zIYY7GS2NHj7iEtz16skuqlbCIJGDDIUDmyw1xLLmAGkL'
+    },
+    data: data
+  }
+
+  const response = await axios.request(config)
+  const blogs = response.data.documents // Assuming the response has a 'documents' field
+  // Return the blogs data as a prop
+  console.log(blogs, 'blogs')
+  return {
+    props: {
+      blogs
+    },
+    revalidate: 10 // Optionally, add revalidation time in seconds
+  }
 }
