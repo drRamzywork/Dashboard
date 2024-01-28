@@ -11,6 +11,7 @@ const navigation = () => {
       title: 'Add Blog',
       path: '/forms/form-layouts'
     },
+
     {
       icon: 'tabler:id',
       title: 'All Blogs',

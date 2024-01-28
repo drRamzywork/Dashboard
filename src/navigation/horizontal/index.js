@@ -4,6 +4,7 @@ const navigation = () => [
     path: '/home',
     icon: 'tabler:smart-home'
   },
+
   {
     title: 'User',
     icon: 'tabler:user',
@@ -39,11 +40,13 @@ const navigation = () => [
       }
     ]
   },
+
   {
     title: 'Second Page',
     path: '/second-page',
     icon: 'tabler:mail'
   },
+
   {
     path: '/acl',
     action: 'read',
