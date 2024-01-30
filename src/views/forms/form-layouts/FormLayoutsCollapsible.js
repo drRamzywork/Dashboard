@@ -155,7 +155,7 @@ const FormLayoutsCollapsible = () => {
           toast.success('Blog submitted successfully!')
           setLoader(false)
           setFormData([])
-          router.push('/apps/user/list/')
+          router.reload()
         }
       } catch (error) {
         console.error('Error in form submission:', error)

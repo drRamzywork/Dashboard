@@ -41,19 +41,6 @@ import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
 import axios from 'axios'
 
 // ** renders client column
-const userRoleObj = {
-  admin: { icon: 'tabler:device-laptop', color: 'secondary' },
-  author: { icon: 'tabler:circle-check', color: 'success' },
-  editor: { icon: 'tabler:edit', color: 'info' },
-  maintainer: { icon: 'tabler:chart-pie-2', color: 'primary' },
-  subscriber: { icon: 'tabler:user', color: 'warning' }
-}
-
-const userStatusObj = {
-  active: 'success',
-  pending: 'warning',
-  inactive: 'secondary'
-}
 
 // ** renders client column
 const renderClient = row => {
@@ -210,7 +197,7 @@ const columns = [
   }
 ]
 
-const UserList = ({ apiData, blogs }) => {
+const UserList = ({ blogs }) => {
   // ** State
   const [selectedCategory, setSelectedCategory] = useState('')
 
@@ -220,9 +207,8 @@ const UserList = ({ apiData, blogs }) => {
   const [status, setStatus] = useState('')
   const [addUserOpen, setAddUserOpen] = useState(false)
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 })
-
   const dispatch = useDispatch()
-  const store = useSelector(state => state.user)
+
   useEffect(() => {
     dispatch(
       fetchData({
@@ -234,17 +220,6 @@ const UserList = ({ apiData, blogs }) => {
     )
   }, [dispatch, plan, role, status, value])
 
-  const handleRoleChange = useCallback(e => {
-    setRole(e.target.value)
-  }, [])
-
-  const handlePlanChange = useCallback(e => {
-    setPlan(e.target.value)
-  }, [])
-
-  const handleStatusChange = useCallback(e => {
-    setStatus(e.target.value)
-  }, [])
   const toggleAddUserDrawer = () => setAddUserOpen(!addUserOpen)
 
   const [filteredBlogs, setFilteredBlogs] = useState(blogs)
@@ -367,6 +342,6 @@ export async function getStaticProps() {
     props: {
       blogs
     },
-    revalidate: 10 // Optionally, add revalidation time in seconds
+    revalidate: 5
   }
 }
