@@ -9,6 +9,7 @@ const FileUploaderSingle = ({ onFilesSelected }) => {
 
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
+
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif']
     },
@@ -26,9 +27,11 @@ const FileUploaderSingle = ({ onFilesSelected }) => {
         }
         setPreviewUrl(newPreviewUrl)
 
+        onFilesSelected(newFile)
+
         // Notify parent component with the new file
         if (onFilesSelected) {
-          onFilesSelected([newFile])
+          onFilesSelected(newFile)
         }
       }
     }

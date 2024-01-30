@@ -1,5 +1,5 @@
 // ** React Imports
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // ** MUI Imports
 import Grid from '@mui/material/Grid'
@@ -23,10 +23,13 @@ import FileUploaderSingle from 'src/views/forms/form-elements/file-uploader/File
 import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/FileUploaderMultiple'
 import { toast } from 'react-hot-toast'
 import CircularProgress from '@mui/material/CircularProgress'
-import imageCompression from 'browser-image-compression'
+import { useRouter } from 'next/router'
 
 const FormLayoutsCollapsible = () => {
   // ** States
+
+  const router = useRouter()
+
   const [selectedFiles, setSelectedFiles] = useState({
     mainImage: [],
     galleryImages: []
@@ -38,7 +41,7 @@ const FormLayoutsCollapsible = () => {
     title: '',
     brefDesc: '',
     fullDesc: '',
-    qoute: '',
+    quote: '',
     contentWriter: '',
     secTitle: '',
     secDesc: '',
@@ -48,14 +51,12 @@ const FormLayoutsCollapsible = () => {
     blogImagesGallery: []
   })
 
-  // ==============================================================
+  const handleMainImageSelected = file => {
+    setSelectedFiles({ ...selectedFiles, mainImage: file }) // Pass the single file directly
+  }
 
-  const handleFilesSelected = (files, type) => {
-    if (type === 'mainImage') {
-      setSelectedFiles({ ...selectedFiles, mainImage: files[0] || null })
-    } else if (type === 'galleryImages') {
-      setSelectedFiles({ galleryImages: files })
-    }
+  const handleGalleryImagesSelected = files => {
+    setSelectedFiles({ ...selectedFiles, galleryImages: files })
   }
 
   const handleInputChange = e => {
@@ -63,16 +64,25 @@ const FormLayoutsCollapsible = () => {
     setFormData({ ...formData, [name]: value })
   }
 
+  const fetchWithTimeout = (resource, options = {}) => {
+    const { timeout = 20000 } = options // 20 seconds timeout
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), timeout)
+
+    return fetch(resource, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
+  }
+
   const handleFileUpload = async file => {
     const formData = new FormData()
     formData.append('file', file)
 
-    console.log(file, 'FILELEEE')
+    console.log(file, 'FFFFF')
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetchWithTimeout('/api/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
+        timeout: 20000
       })
 
       if (!response.ok) {
@@ -81,58 +91,81 @@ const FormLayoutsCollapsible = () => {
         throw new Error(`File upload failed: ${response.statusText}`)
       }
 
-      console.log(response)
       const data = await response.json()
 
       return data.fileId
     } catch (error) {
-      console.error('Error in file upload:', error)
+      if (error.name === 'AbortError') {
+        console.error('File upload aborted due to timeout')
+      } else {
+        console.error('Error in file upload:', error)
+      }
+      throw error
     }
   }
 
   const handleSubmit = async e => {
     e.preventDefault()
     setLoader(true)
+
+    let finalData = { ...formData }
+
     try {
-      // Initialize an object to collect the final data
-      let finalData = { ...formData }
+      const uploadPromises = []
 
-      // Handle main image upload
       if (selectedFiles.mainImage) {
-        const mainImageId = await handleFileUpload(selectedFiles.mainImage)
-        finalData.mainImage = mainImageId
+        uploadPromises.push(handleFileUpload(selectedFiles.mainImage))
       }
 
-      // Handle gallery images upload
       if (selectedFiles.galleryImages.length > 0) {
-        const galleryImageIds = await Promise.all(selectedFiles.galleryImages.map(file => handleFileUpload(file)))
-        finalData.blogImagesGallery = galleryImageIds
+        uploadPromises.push(...selectedFiles.galleryImages.map(file => handleFileUpload(file)))
       }
 
-      // Now, finalData contains all text fields and image IDs/URLs
+      const uploadResults = await Promise.all(uploadPromises)
 
-      const response = await fetch('/api/create-blog', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(finalData)
-      })
+      // Assign the results to finalData
+      if (selectedFiles.mainImage) {
+        finalData.mainImage = uploadResults.shift()
+      }
 
-      console.log(finalData, 'finalData')
+      if (selectedFiles.galleryImages.length > 0) {
+        finalData.blogImagesGallery = uploadResults
+      }
 
-      const responseData = await response.json()
-      console.log(response, 'responseData')
-      if (responseData) {
-        toast.success('Blog submitted successfully!') // Success toast
+      // Submit the final data
+      try {
+        const response = await fetch('/api/create-blog', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(finalData)
+        })
+        console.log(response, 'fileIdfileIdfileId2')
 
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error Response:', errorText)
+          setLoader(false)
+          throw new Error(`Requesssst failed: ${response.status}`)
+        }
+
+        const responseData = await response.json()
+        if (responseData) {
+          toast.success('Blog submitted successfully!')
+          setLoader(false)
+          setFormData([])
+          router.push('/apps/user/list/')
+        }
+      } catch (error) {
+        console.error('Error in form submission:', error)
         setLoader(false)
+        toast.error('Blog submission failed. Please try again.')
       }
     } catch (error) {
-      console.error('Error in form submission:', error)
+      console.error('Error:', error)
       setLoader(false)
-
-      toast.error('Blog submission failed. Please try again.') // Failure toast
+      toast.error('Upload failed. Please try again.')
     }
   }
 
@@ -179,11 +212,11 @@ const FormLayoutsCollapsible = () => {
 
           <Grid item xs={12} sm={6}>
             <CustomTextField
-              name='qoute'
+              name='quote'
               value={formData.qoute}
               onChange={handleInputChange}
               fullWidth
-              label='Quote'
+              label='quote'
               placeholder='quote'
             />
           </Grid>
@@ -262,9 +295,10 @@ const FormLayoutsCollapsible = () => {
                       jsx: source.FileUploaderMultipleJSXCode
                     }}
                   >
-                    <FileUploaderMultiple onFilesSelected={files => handleFilesSelected(files, 'galleryImages')} />
+                    <FileUploaderMultiple onFilesSelected={handleGalleryImagesSelected} />
                   </CardSnippet>
                 </Grid>
+
                 <Grid item xs={12}>
                   <CardSnippet
                     title='Upload Blog Main Image '
@@ -273,7 +307,7 @@ const FormLayoutsCollapsible = () => {
                       jsx: source.FileUploaderSingleJSXCode
                     }}
                   >
-                    <FileUploaderSingle onFilesSelected={files => handleFilesSelected(files, 'mainImage')} />
+                    <FileUploaderSingle onFilesSelected={handleMainImageSelected} />
                   </CardSnippet>
                 </Grid>
               </Grid>
