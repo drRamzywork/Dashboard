@@ -24,6 +24,7 @@ import FileUploaderMultiple from 'src/views/forms/form-elements/file-uploader/Fi
 import { toast } from 'react-hot-toast'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useRouter } from 'next/router'
+import Pica from 'pica'
 
 const FormLayoutsCollapsible = () => {
   // ** States
@@ -41,7 +42,7 @@ const FormLayoutsCollapsible = () => {
     title: '',
     brefDesc: '',
     fullDesc: '',
-    quote: '',
+    qoute: '',
     contentWriter: '',
     secTitle: '',
     secDesc: '',
@@ -64,113 +65,174 @@ const FormLayoutsCollapsible = () => {
     setFormData({ ...formData, [name]: value })
   }
 
-  const fetchWithTimeout = (resource, options = {}) => {
-    const { timeout = 20000 } = options // 20 seconds timeout
+  function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 120000 } = options // Extend timeout to 2 minutes as an example
     const controller = new AbortController()
     const id = setTimeout(() => controller.abort(), timeout)
 
-    return fetch(resource, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
+    return fetch(resource, {
+      ...options,
+      signal: controller.signal
+    })
+      .then(response => {
+        clearTimeout(id)
+        return response
+      })
+      .catch(error => {
+        clearTimeout(id)
+        throw error
+      })
+  }
+
+  const resizeAndConvertImage = async file => {
+    const pica = Pica()
+
+    // Create an off-screen canvas
+    const offScreenCanvas = document.createElement('canvas')
+    const ctx = offScreenCanvas.getContext('2d')
+
+    // Load the image
+    const image = new Image()
+    const reader = new FileReader()
+
+    // This will return a promise that resolves with the resized and converted blob
+    return new Promise((resolve, reject) => {
+      reader.onload = e => {
+        image.onload = async () => {
+          // Set canvas size to the target size
+          offScreenCanvas.width = 1024 // or whatever size you need
+          offScreenCanvas.height = (image.height / image.width) * 1024 // Maintain aspect ratio
+
+          // Resize the image using Pica
+          await pica.resize(image, offScreenCanvas, {
+            unsharpAmount: 80,
+            unsharpRadius: 0.6,
+            unsharpThreshold: 2
+          })
+
+          // Convert canvas to WebP blob
+          offScreenCanvas.toBlob(
+            blob => {
+              resolve(blob)
+            },
+            'image/webp',
+            0.9
+          ) // Adjust quality as needed
+        }
+
+        image.src = e.target.result
+      }
+
+      reader.onerror = error => reject(error)
+
+      reader.readAsDataURL(file)
+    })
   }
 
   const handleFileUpload = async file => {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    console.log(file, 'FFFFF')
-
     try {
+      const resizedImageBlob = await resizeAndConvertImage(file)
+      if (!resizedImageBlob) {
+        console.error('Failed to resize and convert image')
+        return null
+      }
+
+      const formData = new FormData()
+      formData.append('file', resizedImageBlob, 'image.webp')
+
       const response = await fetchWithTimeout('/api/upload', {
         method: 'POST',
-        body: formData,
-        timeout: 20000
+        body: formData
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Upload Error Response:', errorText)
-        throw new Error(`File upload failed: ${response.statusText}`)
+        console.error('Network response was not ok.', response.statusText)
+        return null
       }
 
       const data = await response.json()
-
-      return data.fileId
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.error('File upload aborted due to timeout')
+      if (data.fileIds && data.fileIds.length > 0) {
+        console.log('File uploaded successfully:', data.fileIds[0])
+        return data.fileIds[0] // Assuming you want the first file ID
       } else {
-        console.error('Error in file upload:', error)
+        console.error('File IDs not found in response:', data)
+        return null
       }
-      throw error
+    } catch (error) {
+      console.error('Error in file processing or upload:', error)
+      return null
     }
   }
+
+  // const handleFileUpload = async file => {
+  //   const formData = new FormData()
+  //   formData.append('file', file)
+
+  //   try {
+  //     const response = await fetchWithTimeout('/api/upload', {
+  //       method: 'POST',
+  //       body: formData
+  //     })
+
+  //     console.log(response, 'RESSSSSSSSSS')
+
+  //     const data = await response.json()
+
+  //     return data.fileId
+  //   } catch (error) {
+  //     if (error.name === 'AbortError') {
+  //       console.error('File upload aborted due to timeout')
+  //     } else {
+  //       console.error('Error msg in file upload:', error)
+  //     }
+  //     throw error
+  //   }
+  // }
 
   const handleSubmit = async e => {
     e.preventDefault()
     setLoader(true)
 
-    let finalData = { ...formData }
-
     try {
-      const uploadPromises = []
-
-      if (selectedFiles.mainImage) {
-        uploadPromises.push(handleFileUpload(selectedFiles.mainImage))
-      }
-
-      if (selectedFiles.galleryImages.length > 0) {
-        uploadPromises.push(...selectedFiles.galleryImages.map(file => handleFileUpload(file)))
-      }
+      const uploadPromises = selectedFiles.mainImage ? [handleFileUpload(selectedFiles.mainImage)] : []
+      uploadPromises.push(...selectedFiles.galleryImages.map(file => handleFileUpload(file)))
 
       const uploadResults = await Promise.all(uploadPromises)
 
-      // Assign the results to finalData
+      // Assuming uploadResults contains IDs or paths for the uploaded files
+      let finalData = { ...formData }
       if (selectedFiles.mainImage) {
-        finalData.mainImage = uploadResults.shift()
+        finalData.mainImage = uploadResults.shift() // Adjust based on your API response structure
       }
-
       if (selectedFiles.galleryImages.length > 0) {
         finalData.blogImagesGallery = uploadResults
       }
 
-      // Submit the final data
-      try {
-        const response = await fetch('/api/create-blog', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(finalData)
-        })
-        console.log(response, 'fileIdfileIdfileId2')
+      // Now, proceed to create the blog post with the finalData including uploaded file references
+      const response = await fetch('/api/create-blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalData)
+      })
+      console.log(finalData, 'RORORORO')
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Error Response:', errorText)
-          setLoader(false)
-          throw new Error(`Requesssst failed: ${response.status}`)
-        }
-
-        const responseData = await response.json()
-        if (responseData) {
-          toast.success('Blog submitted successfully!')
-          setLoader(false)
-          setFormData([])
-          router.reload()
-        }
-      } catch (error) {
-        console.error('Error in form submission:', error)
+      console.log(response, 'RORORORO')
+      if (response.status === 201) {
         setLoader(false)
-        toast.error('Blog submission failed. Please try again.')
+        toast.success('Blog submitted successfully!')
       }
+      // router.reload()
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error during form submission:', error)
+      toast.error('Blog submission failed. Please try again.')
       setLoader(false)
-      toast.error('Upload failed. Please try again.')
     }
   }
 
   return (
-    <form onSubmit={e => e.preventDefault()}>
+    <form>
       <Grid sx={{ pt: theme => `${theme.spacing(4)} !important` }}>
         <Grid container spacing={5}>
           <Grid item xs={12} sm={6}>
@@ -212,12 +274,12 @@ const FormLayoutsCollapsible = () => {
 
           <Grid item xs={12} sm={6}>
             <CustomTextField
-              name='quote'
+              name='qoute'
               value={formData.qoute}
               onChange={handleInputChange}
               fullWidth
-              label='quote'
-              placeholder='quote'
+              label='qoute'
+              placeholder='qoute'
             />
           </Grid>
           <Grid item xs={12} sm={6}>
