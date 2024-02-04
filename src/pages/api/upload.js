@@ -68,6 +68,7 @@ export default async function uploadHandler(req, res) {
 
   try {
     const { connClient } = await dbConnect()
+
     const bucket = new GridFSBucket(connClient.db('blog'), {
       bucketName: 'uploads'
     })
@@ -76,7 +77,6 @@ export default async function uploadHandler(req, res) {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Formidable error:', err)
         return res.status(500).json({ error: 'Error parsing the form data' })
       }
 
@@ -87,6 +87,7 @@ export default async function uploadHandler(req, res) {
 
       // Support for multiple file uploads
       const fileList = Array.isArray(files.file) ? files.file : [files.file]
+
       const uploadPromises = fileList.map(file => {
         return new Promise((resolve, reject) => {
           const readStream = fs.createReadStream(file.filepath)
@@ -103,7 +104,6 @@ export default async function uploadHandler(req, res) {
             fs.unlink(file.filepath, err => {
               if (err) {
                 console.error('Error deleting temp file:', err)
-                // Not rejecting here to avoid failing the entire operation due to cleanup issues
               }
               resolve(uploadStream.id)
             })

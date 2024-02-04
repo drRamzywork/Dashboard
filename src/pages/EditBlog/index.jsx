@@ -4,7 +4,6 @@ import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import { toast } from 'react-hot-toast'
 import CustomTextField from 'src/@core/components/mui/text-field'
-// Import other necessary components and utilities
 import axios from 'axios';
 
 const EditBlog = ({ initialBlogData }) => {
@@ -21,7 +20,7 @@ const EditBlog = ({ initialBlogData }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // Logic to handle form submission, including image upload and sending updated data to your API
+
   }
 
   // Populate the form with the initial data

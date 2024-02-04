@@ -76,6 +76,7 @@ const FormLayoutsCollapsible = () => {
     })
       .then(response => {
         clearTimeout(id)
+
         return response
       })
       .catch(error => {
@@ -134,6 +135,7 @@ const FormLayoutsCollapsible = () => {
       const resizedImageBlob = await resizeAndConvertImage(file)
       if (!resizedImageBlob) {
         console.error('Failed to resize and convert image')
+
         return null
       }
 
@@ -147,19 +149,24 @@ const FormLayoutsCollapsible = () => {
 
       if (!response.ok) {
         console.error('Network response was not ok.', response.statusText)
+
         return null
       }
 
       const data = await response.json()
+
       if (data.fileIds && data.fileIds.length > 0) {
         console.log('File uploaded successfully:', data.fileIds[0])
-        return data.fileIds[0] // Assuming you want the first file ID
+
+        return data.fileIds[0]
       } else {
         console.error('File IDs not found in response:', data)
+
         return null
       }
     } catch (error) {
       console.error('Error in file processing or upload:', error)
+
       return null
     }
   }
@@ -216,14 +223,13 @@ const FormLayoutsCollapsible = () => {
         },
         body: JSON.stringify(finalData)
       })
-      console.log(finalData, 'RORORORO')
 
-      console.log(response, 'RORORORO')
       if (response.status === 201) {
         setLoader(false)
+
         toast.success('Blog submitted successfully!')
+        router.reload()
       }
-      // router.reload()
     } catch (error) {
       console.error('Error during form submission:', error)
       toast.error('Blog submission failed. Please try again.')

@@ -2,7 +2,7 @@ import React from 'react'
 import axios from 'axios';
 
 const Blog = ({ blog }) => {
-  console.log(blog)
+
   return (
     <h1>Blog</h1>
   )
@@ -12,7 +12,7 @@ export default Blog
 
 export async function getServerSideProps(context) {
   const id = context.query.id;
-  // Define the request body
+
   const data = JSON.stringify({
     "dataSource": "Cluster0",
     "database": "dashboard-db",
@@ -24,7 +24,6 @@ export async function getServerSideProps(context) {
     }
   });
 
-  // Define the Axios request configuration
   const config = {
     method: 'post',
     url: 'https://data.mongodb-api.com/app/data-yhygn/endpoint/data/v1/action/findOne',
@@ -38,13 +37,13 @@ export async function getServerSideProps(context) {
   };
 
   try {
-    // Make the request
     const response = await axios.request(config);
-    // Pass the blog data as props
+
     return { props: { blog: response.data.document } };
+
   } catch (error) {
     console.error(error);
-    // Return an empty object as blog if there was an error
+
     return { props: { blog: {} } };
   }
 }
