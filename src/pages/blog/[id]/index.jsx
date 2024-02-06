@@ -1,10 +1,13 @@
 import React from 'react'
 import axios from 'axios';
+import { Grid } from '@mui/material';
+import FormLayoutsCollapsible from 'src/views/forms/form-layouts/FormLayoutsCollapsible';
 
-const Blog = ({ blog }) => {
-
+const Blog = ({ blogData }) => {
   return (
-    <h1>Blog</h1>
+    <Grid item xs={12} sx={{ pt: theme => `${theme.spacing(4)} !important` }}>
+      <FormLayoutsCollapsible blogData={blogData} />
+    </Grid>
   )
 }
 
@@ -30,7 +33,7 @@ export async function getServerSideProps(context) {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Request-Headers': '*',
-      'api-key': "Mmg9Q0QiZkSIpthlGX1zIYY7GS2NHj7iEtz16skuqlbCIJGDDIUDmyw1xLLmAGkL", // Use an environment variable for the API key
+      'api-key': "Mmg9Q0QiZkSIpthlGX1zIYY7GS2NHj7iEtz16skuqlbCIJGDDIUDmyw1xLLmAGkL",
       'Accept': 'application/json'
     },
     data: data
@@ -39,11 +42,11 @@ export async function getServerSideProps(context) {
   try {
     const response = await axios.request(config);
 
-    return { props: { blog: response.data.document } };
+    return { props: { blogData: response.data.document } };
 
   } catch (error) {
     console.error(error);
 
-    return { props: { blog: {} } };
+    return { props: { blogData: {} } };
   }
 }

@@ -10,44 +10,67 @@
 // }
 
 // export default async function uploadHandler(req, res) {
-//   const { connClient } = await dbConnect()
+//   if (req.method !== 'POST') {
+//     return res.status(405).json({ error: 'Method not allowed' })
+//   }
 
-//   const bucket = new GridFSBucket(connClient.db('blog'), {
-//     bucketName: 'uploads'
-//   })
+//   try {
+//     const { connClient } = await dbConnect()
 
-//   const form = new IncomingForm({ uploadDir: '/tmp', keepExtensions: true })
+//     const bucket = new GridFSBucket(connClient.db('blog'), {
+//       bucketName: 'uploads'
+//     })
 
-//   form.parse(req, (err, fields, files) => {
-//     if (err) {
-//       console.error(err)
-//       res.status(500).json({ error: 'Error parsing the files' })
+//     const form = new IncomingForm({ uploadDir: '/tmp', keepExtensions: true, multiples: true })
 
-//       return
-//     }
+//     form.parse(req, async (err, fields, files) => {
+//       if (err) {
+//         return res.status(500).json({ error: 'Error parsing the form data' })
+//       }
 
-//     // Handle file processing
-//     if (files.file) {
-//       const file = Array.isArray(files.file) ? files.file[0] : files.file
-//       const readStream = fs.createReadStream(file.filepath)
-//       const uploadStream = bucket.openUploadStream(file.originalFilename)
+//       // Ensure there's at least one file uploaded
+//       if (!files.file) {
+//         return res.status(400).json({ error: 'No files uploaded' })
+//       }
 
-//       readStream.pipe(uploadStream)
+//       // Support for multiple file uploads
+//       const fileList = Array.isArray(files.file) ? files.file : [files.file]
 
-//       uploadStream.on('error', () => {
-//         res.status(500).send('Error uploading file to GridFS')
-//       })
+//       const uploadPromises = fileList.map(file => {
+//         return new Promise((resolve, reject) => {
+//           const readStream = fs.createReadStream(file.filepath)
+//           const uploadStream = bucket.openUploadStream(file.originalFilename)
 
-//       uploadStream.on('finish', () => {
-//         fs.unlink(file.filepath, err => {
-//           if (err) console.error('Error deleting temp file', err)
+//           readStream.pipe(uploadStream)
+
+//           uploadStream.on('error', error => {
+//             console.error('Upload stream error:', error)
+//             reject(error)
+//           })
+
+//           uploadStream.on('finish', () => {
+//             fs.unlink(file.filepath, err => {
+//               if (err) {
+//                 console.error('Error deleting temp file:', err)
+//               }
+//               resolve(uploadStream.id)
+//             })
+//           })
 //         })
-//         res.status(201).send({ message: 'File uploaded successfully to GridFS', fileId: uploadStream.id })
 //       })
-//     } else {
-//       res.status(400).json({ error: 'No file uploaded' })
-//     }
-//   })
+
+//       // Await all files to be uploaded
+//       try {
+//         const fileIds = await Promise.all(uploadPromises)
+//         res.status(201).json({ message: 'Files uploaded successfully to GridFS', fileIds })
+//       } catch (uploadError) {
+//         res.status(500).json({ error: 'Error uploading one or more files to GridFS' })
+//       }
+//     })
+//   } catch (dbError) {
+//     console.error('Database connection error:', dbError)
+//     res.status(500).json({ error: 'Error connecting to database' })
+//   }
 // }
 
 import { IncomingForm } from 'formidable'
@@ -66,6 +89,8 @@ export default async function uploadHandler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  console.log(req, res, 'SSSSSSSSSSSZZZZZ')
+
   try {
     const { connClient } = await dbConnect()
 
@@ -80,42 +105,35 @@ export default async function uploadHandler(req, res) {
         return res.status(500).json({ error: 'Error parsing the form data' })
       }
 
-      // Ensure there's at least one file uploaded
       if (!files.file) {
         return res.status(400).json({ error: 'No files uploaded' })
       }
 
-      // Support for multiple file uploads
       const fileList = Array.isArray(files.file) ? files.file : [files.file]
 
-      const uploadPromises = fileList.map(file => {
-        return new Promise((resolve, reject) => {
-          const readStream = fs.createReadStream(file.filepath)
-          const uploadStream = bucket.openUploadStream(file.originalFilename)
+      const uploadPromises = fileList.map(
+        file =>
+          new Promise((resolve, reject) => {
+            const readStream = fs.createReadStream(file.filepath)
+            const uploadStream = bucket.openUploadStream(file.originalFilename)
 
-          readStream.pipe(uploadStream)
-
-          uploadStream.on('error', error => {
-            console.error('Upload stream error:', error)
-            reject(error)
-          })
-
-          uploadStream.on('finish', () => {
-            fs.unlink(file.filepath, err => {
-              if (err) {
-                console.error('Error deleting temp file:', err)
-              }
-              resolve(uploadStream.id)
+            uploadStream.on('error', error => reject(error))
+            uploadStream.on('finish', () => {
+              fs.unlink(file.filepath, err => {
+                if (err) console.error('Error deleting temp file:', err)
+                resolve(uploadStream.id.toString())
+              })
             })
-          })
-        })
-      })
 
-      // Await all files to be uploaded
+            readStream.pipe(uploadStream)
+          })
+      )
+
       try {
         const fileIds = await Promise.all(uploadPromises)
-        res.status(201).json({ message: 'Files uploaded successfully to GridFS', fileIds })
+        res.status(201).json({ success: true, fileIds: fileIds })
       } catch (uploadError) {
+        console.error('Upload error:', uploadError)
         res.status(500).json({ error: 'Error uploading one or more files to GridFS' })
       }
     })

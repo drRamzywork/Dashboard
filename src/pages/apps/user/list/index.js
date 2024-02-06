@@ -39,6 +39,7 @@ import { fetchData, deleteUser } from 'src/store/apps/user'
 import TableHeader from 'src/views/apps/user/list/TableHeader'
 import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 // ** renders client column
 
@@ -63,6 +64,7 @@ const renderClient = row => {
 
 const RowOptions = ({ id }) => {
   // ** Hooks
+  console.log(id, 'SSSSS')
   const dispatch = useDispatch()
 
   // ** State
@@ -80,6 +82,26 @@ const RowOptions = ({ id }) => {
   const handleDelete = () => {
     dispatch(deleteUser(id))
     handleRowOptionsClose()
+  }
+
+  const deleteBlog = async blogId => {
+    try {
+      const response = await fetch(`/api/delete-blog?id=${blogId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.status === 204) {
+        toast.success('Blog deleted successfully')
+      } else if (response.status === 404) {
+        console.error('Blog not found')
+        toast.error('Blog not found')
+      } else {
+        console.error('Failed to delete blog')
+        toast.error('Failed to delete blog')
+      }
+    } catch (error) {
+      console.error('Error deleting blog:', error)
+    }
   }
 
   return (
@@ -102,20 +124,15 @@ const RowOptions = ({ id }) => {
         }}
         PaperProps={{ style: { minWidth: '8rem' } }}
       >
-        <MenuItem
-          component={Link}
-          sx={{ '& svg': { mr: 2 } }}
-          href='/apps/user/view/account'
-          onClick={handleRowOptionsClose}
-        >
+        <MenuItem component={Link} sx={{ '& svg': { mr: 2 } }} href={`/blog/${id}`} onClick={handleRowOptionsClose}>
           <Icon icon='tabler:eye' fontSize={20} />
           View
         </MenuItem>
-        <MenuItem onClick={handleRowOptionsClose} sx={{ '& svg': { mr: 2 } }}>
+        <MenuItem component={Link} href={`/blog/${id}`} sx={{ '& svg': { mr: 2 } }}>
           <Icon icon='tabler:edit' fontSize={20} />
           Edit
         </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ '& svg': { mr: 2 } }}>
+        <MenuItem onClick={() => deleteBlog(id)} sx={{ '& svg': { mr: 2 } }}>
           <Icon icon='tabler:trash' fontSize={20} />
           Delete
         </MenuItem>
@@ -131,7 +148,7 @@ const columns = [
     field: 'title',
     headerName: 'Blog',
     renderCell: ({ row }) => {
-      const { title, secTitle } = row
+      const { title, secTitle, _id } = row
 
       return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -140,7 +157,7 @@ const columns = [
             <Typography
               noWrap
               component={Link}
-              href='/apps/user/view/account'
+              href={`/blog/${_id}`}
               sx={{
                 fontWeight: 500,
                 textDecoration: 'none',
@@ -160,14 +177,14 @@ const columns = [
   },
   {
     flex: 0.15,
-    field: 'role',
+    field: 'secTitle',
     minWidth: 170,
-    headerName: 'Full Desc',
+    headerName: 'Second title',
     renderCell: ({ row }) => {
       return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
-            {row.fullDesc}
+            {row.secTitle}
           </Typography>
         </Box>
       )
@@ -176,12 +193,12 @@ const columns = [
   {
     flex: 0.15,
     minWidth: 120,
-    headerName: 'Second Desc',
-    field: 'secDesc',
+    headerName: 'Category',
+    field: 'category',
     renderCell: ({ row }) => {
       return (
         <Typography noWrap sx={{ fontWeight: 500, color: 'text.secondary', textTransform: 'capitalize' }}>
-          {row.secDesc}
+          {row.category}
         </Typography>
       )
     }
@@ -193,13 +210,13 @@ const columns = [
     sortable: false,
     field: 'actions',
     headerName: 'Actions',
-    renderCell: ({ row }) => <RowOptions id={row.id} />
+    renderCell: ({ row }) => <RowOptions id={row._id} />
   }
 ]
 
 const UserList = ({ blogs }) => {
   // ** State
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('Select Category')
 
   const [role, setRole] = useState('')
   const [plan, setPlan] = useState('')
@@ -268,7 +285,7 @@ const UserList = ({ blogs }) => {
     },
     [blogs]
   )
-  const uniqueCategories = Array.from(new Set(blogs.map(blog => blog.category)))
+  const uniqueCategories = Array.from(new Set(blogs.map(blog => blog.category))).filter(category => category !== '')
 
   return (
     <Grid container spacing={6.5}>
@@ -280,7 +297,6 @@ const UserList = ({ blogs }) => {
               <Grid item sm={4} xs={12}>
                 <CustomTextField select fullWidth value={selectedCategory} onChange={handleCategoryChange}>
                   <MenuItem value='Select Category'>Select Category</MenuItem>
-
                   {uniqueCategories.map(category => (
                     <MenuItem key={category} value={category}>
                       {category}
